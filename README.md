@@ -1,6 +1,8 @@
 # My simple soft renderer
 
-<img src="./pics/bunny.png" alt="drawing" style="width:500px;"/>
+![Bunny](./pics/bunny.png)
+
+A simple soft renderer build from scratch.
 
 When creating the soft renderer, create a kind of model format called simple_model.
 
