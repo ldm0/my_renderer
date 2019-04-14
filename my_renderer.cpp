@@ -17,6 +17,7 @@ Renderer::Renderer()
 	back_buffer_original_handle(0),
 	back_buffer(0),
 	z_buffer(0),
+	camera_position({0}),
 	yaw_pitch_roll({0}),
 	mesh_faces_length(0),
 	mesh_faces(0),
@@ -27,7 +28,6 @@ Renderer::Renderer()
 	texture(0),
 	window_exit(false)
 {
-	camera_position = {0, 0, -10, 1};
 }
 
 Renderer::~Renderer()
@@ -201,7 +201,7 @@ void Renderer::draw(void)
 		c.position.y = -c.position.y * scale + .5f * window_height;
 
 		// Rasterize
-		draw_triangle(a, b, c);
+		//draw_triangle(a, b, c);
 		draw_triangle_edge(a, b, c);
 	}
 }

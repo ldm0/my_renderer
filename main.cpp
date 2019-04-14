@@ -1,5 +1,5 @@
 #include"my_renderer.h"
-#include"my_simple_model_loader.h"
+#include"my_simple_model/my_simple_model_loader.h"
 #include<Windows.h>
 #include<time.h>
 #include<math.h>
@@ -8,8 +8,8 @@
 
 #define renderer Renderer::get()
 
+// code below are for testing
 /*
-// these vertices are for testing
 #define CUBE_MESH_FACES_LENGTH 12
 #define CUBE_MESH_VERTICES_LENGTH 8
 
@@ -89,10 +89,16 @@ void event_dispatch(void)
 	}
 }
 
+void camera_reset(void)
+{
+	renderer.camera_position = {0.f, 0.f, -.5f, 1.f};
+	renderer.yaw_pitch_roll = {0.f, 0.f, 0.f};
+}
+
 void camera_control(void) 
 {
-#define move_speed (0.1f)
-#define rotate_speed (0.0125f)
+#define move_speed (0.003f)
+#define rotate_speed (0.01f)
 	vec4 camera_direction = {0.f, 0.f, 1.f, 0.f};
 	camera_direction = rotate(&camera_direction, &(renderer.yaw_pitch_roll));
 	vec4 up_direction = {0.f, 1.f, 0.f, 0.f};
@@ -100,6 +106,7 @@ void camera_control(void)
 	right_direction.x *= -1.f;
 	right_direction.y *= -1.f;
 	right_direction.z *= -1.f;
+
 	static bool log = false;
 	if (key_down['L']) {
 		if (!log) {
@@ -119,7 +126,7 @@ void camera_control(void)
 		renderer.yaw_pitch_roll.x += rotate_speed;
 	if (key_down[VK_RIGHT])
 		renderer.yaw_pitch_roll.x -= rotate_speed;
-	// reverse is because pitch means angle from y to z
+	// plus and minus are reversed is because pitch means angle from y to z
 	if (key_down[VK_UP])
 		renderer.yaw_pitch_roll.y -= rotate_speed;
 	if (key_down[VK_DOWN])
@@ -136,6 +143,8 @@ void camera_control(void)
 		renderer.camera_position = translate(&(renderer.camera_position), &right_direction, move_speed);
 	if (key_down['A'])
 		renderer.camera_position = translate(&(renderer.camera_position), &right_direction, -move_speed);
+	if (key_down['R'])
+		camera_reset();
 	if (key_down[VK_LBUTTON]) {
 		if (!mouse_drag) {
 			yaw_pitch_roll_before = renderer.yaw_pitch_roll;
@@ -153,6 +162,7 @@ void camera_control(void)
 #undef rotate_speed
 }
 
+
 int main()
 {
 	if (renderer.create_window(800, 600, _T("That's good~"), event_process) == -1)
@@ -164,7 +174,9 @@ int main()
 	Renderer::Vertex *bunny_mesh_vertices;
 	Renderer::Face *bunny_mesh_faces;
 	FILE *fs;
-	fopen_s(&fs,"bunny.simple", "r");
+	fopen_s(&fs,"output.simple", "r");
+	if (!fs)
+		return -1;
 	read_simple_model_header(fs, &bunny_mesh_vertices_length, &bunny_mesh_faces_length);
 	bunny_mesh_vertices = (Renderer::Vertex *)malloc(bunny_mesh_vertices_length * sizeof(Renderer::Vertex));
 	bunny_mesh_faces = (Renderer::Face *)malloc(bunny_mesh_faces_length * sizeof(Renderer::Face));
@@ -172,6 +184,7 @@ int main()
 	read_simple_model_mesh_faces(fs, bunny_mesh_faces_length, (simple_face *)bunny_mesh_faces);
 	fclose(fs);
 
+	camera_reset();
 	// load mesh to renderer
 	renderer.load_mesh(
 		bunny_mesh_vertices,

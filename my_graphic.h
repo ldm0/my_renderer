@@ -75,9 +75,9 @@ inline vec4 rotate(const vec4 * vertex_position, const vec3 * yaw_pitch_roll)
 	vec4 before = *vertex_position;
 	vec4 after = *vertex_position;		
 
-	// yaw rotate
-	after.x = before.x * cos_yaw - before.z * sin_yaw;
-	after.z = before.x * sin_yaw + before.z * cos_yaw;
+	// roll rotate
+	after.x = before.x * cos_roll - before.y * sin_roll;
+	after.y = before.x * sin_roll + before.y * cos_roll;
 	before = after;
 
 	// pitch rotate 
@@ -85,9 +85,9 @@ inline vec4 rotate(const vec4 * vertex_position, const vec3 * yaw_pitch_roll)
 	after.z = before.y * sin_pitch + before.z * cos_pitch;
 	before = after;
 
-	// roll rotate
-	after.x = before.x * cos_roll - before.y * sin_roll;
-	after.y = before.x * sin_roll + before.y * cos_roll;
+	// yaw rotate
+	after.x = before.x * cos_yaw - before.z * sin_yaw;
+	after.z = before.x * sin_yaw + before.z * cos_yaw;
 
 	return after;
 }
@@ -105,9 +105,9 @@ inline vec4 rotate_back(const vec4 * vertex_position, const vec3 * yaw_pitch_rol
 	vec4 before = *vertex_position;
 	vec4 after = *vertex_position;		
 
-	// roll rotate back
-	after.x = before.x * cos_roll + before.y * sin_roll;
-	after.y = before.x * -sin_roll + before.y * cos_roll;
+	// yaw rotate back
+	after.x = before.x * cos_yaw + before.z * sin_yaw;
+	after.z = before.x * -sin_yaw + before.z * cos_yaw;
 	before = after;
 
 	// pitch rotate back 
@@ -115,9 +115,9 @@ inline vec4 rotate_back(const vec4 * vertex_position, const vec3 * yaw_pitch_rol
 	after.z = before.y * -sin_pitch + before.z * cos_pitch;
 	before = after;
 
-	// yaw rotate back
-	after.x = before.x * cos_yaw + before.z * sin_yaw;
-	after.z = before.x * -sin_yaw + before.z * cos_yaw;
+	// roll rotate back
+	after.x = before.x * cos_roll + before.y * sin_roll;
+	after.y = before.x * -sin_roll + before.y * cos_roll;
 
 	return after;
 }
@@ -138,3 +138,4 @@ inline vec4 view_space(const vec4 * vertex_position, const vec4 * camera_positio
 }
 
 #endif
+
