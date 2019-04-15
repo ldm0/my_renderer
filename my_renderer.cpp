@@ -47,6 +47,8 @@ int Renderer::create_window(int width, int height, const TCHAR* title, WNDPROC e
 	// classic window and cannot be resized
 	DWORD window_style = WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME);
 
+	window_title = title;
+
 	window_class.style = CS_BYTEALIGNWINDOW | CS_BYTEALIGNCLIENT;
 	window_class.lpfnWndProc = event_process;
 	window_class.cbClsExtra = 0;
