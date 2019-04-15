@@ -10,6 +10,11 @@
 // Remember don't use draw before clear, because result will be overwrite
 class Renderer {
 public:
+	enum DRAW_MODE{
+		DRAW_MESH,
+		DRAW_COLOR,
+		DRAW_MESH_COLOR,
+	} draw_mode;
 	// special structures
 	struct Vertex { vec4 position; };
 	struct Face { unsigned x, y, z; };

@@ -6,7 +6,8 @@
 #include<math.h>		// for fmax
 
 Renderer::Renderer()
-	:window_width(0),
+	:draw_mode(DRAW_MESH_COLOR),
+	window_width(0),
 	window_height(0),
 	window_title(0),
 	window_handle(0),
@@ -106,7 +107,7 @@ int Renderer::create_window(int width, int height, const TCHAR* title, WNDPROC e
 	back_buffer_original_handle = (HBITMAP)SelectObject(back_buffer_dc, back_buffer_handle);
 
 	// create depth buffer with the same width and height
-	z_buffer = (float *)malloc(window_width * window_height * sizeof(float));
+	z_buffer = (float *)malloc((unsigned long long)window_width * (unsigned long long)window_height * sizeof(float));
 
 	ShowWindow(window_handle, SW_SHOW);
 	SetForegroundWindow(window_handle);
@@ -201,8 +202,10 @@ void Renderer::draw(void)
 		c.position.y = -c.position.y * scale + .5f * window_height;
 
 		// Rasterize
-		//draw_triangle(a, b, c);
-		draw_triangle_edge(a, b, c);
+		if (draw_mode == DRAW_MESH_COLOR || draw_mode == DRAW_MESH)
+			draw_triangle(a, b, c);
+		if (draw_mode == DRAW_MESH_COLOR || draw_mode == DRAW_COLOR)
+			draw_triangle_edge(a, b, c);
 	}
 }
 
@@ -259,6 +262,25 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 		+ b_c_y * a.position.x
 		+ c_a_y * b.position.x
 		+ a_b_y * c.position.x;
+
+	// currently just use position_y as color 
+	// so I don't use c_a_y used before
+	float b_a_color = b.position.y - a.position.y;
+	float c_a_color = c.position.y - a.position.y;
+
+	vec2 b_a_position;
+	b_a_position.x = b.position.x - a.position.x;
+	b_a_position.y = -a_b_y;
+	vec2 c_a_position;
+	c_a_position.x = c.position.x - a.position.x;
+	c_a_position.y = c_a_y;
+	// coordinate transform
+	float determinant = b_a_position.x * c_a_position.y - b_a_position.y * c_a_position.x;
+	mat2x2 inv_coord_transform;
+	inv_coord_transform.m[0][0] = c_a_position.y / determinant;
+	inv_coord_transform.m[0][1] = -b_a_position.y / determinant;
+	inv_coord_transform.m[1][0] = -c_a_position.x / determinant;
+	inv_coord_transform.m[1][1] = b_a_position.x / determinant;
 	for (int y = top; y < bottom; ++y) {
 		for (int x = left; x < right; ++x) {
 			float x_f = (float)x;
@@ -276,9 +298,15 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 				+ (y_f - a.position.y) * b.position.x
 				+ a_b_y * x_f;
 			// the point is same side with another triangle point in each in 3 side
-			int in = (tmp * side0 >= 0.f) && (tmp * side1 >= 0.f) && (tmp * side2 >= 0.f);
-			if (in)
-				back_buffer[x + y * window_width] = (unsigned int)(a.position.x + b.position.y + c.position.z);
+			bool inside = (tmp * side0 >= -0.f) && (tmp * side1 >= -0.f) && (tmp * side2 >= -0.f);
+			if (inside) {
+				unsigned result_color = 0;
+				float u, v;
+				u = x_f * inv_coord_transform.m[0][0] + y_f * inv_coord_transform.m[1][0];
+				v = x_f * inv_coord_transform.m[0][1] + y_f * inv_coord_transform.m[1][1];
+				result_color = u * b_a_color + v * c_a_color;
+				back_buffer[x + y * window_width] = result_color;
+			}
 		}
 	}
 }

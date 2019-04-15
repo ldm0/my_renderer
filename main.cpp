@@ -95,7 +95,7 @@ void camera_reset(void)
 	renderer.yaw_pitch_roll = {0.f, 0.f, 0.f};
 }
 
-void camera_control(void) 
+void camera_control(void)
 {
 #define move_speed (0.003f)
 #define rotate_speed (0.01f)
@@ -110,7 +110,7 @@ void camera_control(void)
 	static bool log = false;
 	if (key_down['L']) {
 		if (!log) {
-			right_direction = normalize(&right_direction);
+			right_direction = normalize_vec4(&right_direction);
 			printf("Camera position\t\t: x:%.2f y:%.2f z:%.2f\n", renderer.camera_position.x, renderer.camera_position.y, renderer.camera_position.z);
 			printf("Camera direction\t: x:%.2f y:%.2f z:%.2f\n\n", camera_direction.x, camera_direction.y, camera_direction.z);
 			log = true;
@@ -145,6 +145,15 @@ void camera_control(void)
 		renderer.camera_position = translate(&(renderer.camera_position), &right_direction, -move_speed);
 	if (key_down['R'])
 		camera_reset();
+	static bool mode_change = false;
+	if (key_down['M']) {
+		if (!mode_change) {
+			renderer.draw_mode = (Renderer::DRAW_MODE)((renderer.draw_mode + 1) % 3);
+			mode_change = true;
+		}
+	} else {
+		mode_change = false;
+	}
 	if (key_down[VK_LBUTTON]) {
 		if (!mouse_drag) {
 			yaw_pitch_roll_before = renderer.yaw_pitch_roll;
@@ -162,7 +171,6 @@ void camera_control(void)
 #undef rotate_speed
 }
 
-
 int main()
 {
 	if (renderer.create_window(800, 600, _T("That's good~"), event_process) == -1)
@@ -171,10 +179,10 @@ int main()
 	// load mesh from file
 	unsigned bunny_mesh_vertices_length;
 	unsigned bunny_mesh_faces_length;
-	Renderer::Vertex *bunny_mesh_vertices;
-	Renderer::Face *bunny_mesh_faces;
-	FILE *fs;
-	fopen_s(&fs,"output.simple", "r");
+	Renderer::Vertex * bunny_mesh_vertices;
+	Renderer::Face * bunny_mesh_faces;
+	FILE * fs;
+	fopen_s(&fs, "output.simple", "r");
 	if (!fs)
 		return -1;
 	read_simple_model_header(fs, &bunny_mesh_vertices_length, &bunny_mesh_faces_length);
@@ -198,5 +206,7 @@ int main()
 		renderer.draw();
 		renderer.refresh();
 	}
+	free(bunny_mesh_faces);
+	free(bunny_mesh_vertices);
 	return 0;
 }

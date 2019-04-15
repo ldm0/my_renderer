@@ -5,6 +5,7 @@
 
 #include<math.h>
 
+typedef struct mat2x2 { float m[2][2]; } mat2x2;
 typedef struct mat4x4 { float m[4][4]; } mat4x4;
 typedef struct vec2 { float x, y; } vec2;
 typedef struct vec3 { float x, y, z; } vec3;
@@ -42,7 +43,7 @@ inline vec4 cross_product(const vec4 *a, const vec4 *b)
 	return result;
 }
 
-inline vec4 normalize(const vec4 *a)
+inline vec4 normalize_vec4(const vec4 *a)
 {
 	vec4 result;
 	float base = sqrtf(a->x * a->x + a->y + a->y + a->z + a->z);
@@ -50,6 +51,15 @@ inline vec4 normalize(const vec4 *a)
 	result.y = a->y / base;
 	result.z = a->z / base;
 	result.w = a->w;
+	return result;
+}
+
+inline vec2 normalize_vec2(const vec2 *a)
+{
+	vec2 result;
+	float base = sqrtf(a->x * a->x + a->y + a->y);
+	result.x = a->x / base;
+	result.y = a->y / base;
 	return result;
 }
 
