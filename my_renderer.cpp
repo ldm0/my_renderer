@@ -213,6 +213,7 @@ void Renderer::draw(void)
 
 void Renderer::draw_line(Vertex a, Vertex b)
 {
+	// z buffer is not needed when drawing line
 	float a_b_x = a.position.x - b.position.x;
 	float a_b_y = a.position.y - b.position.y;
 	if (fabsf(a_b_x) < fabsf(a_b_y)) {
@@ -270,19 +271,23 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 	float b_a_color = b.position.y - a.position.y;
 	float c_a_color = c.position.y - a.position.y;
 
+	float b_a_z = b.position.z - a.position.z;
+	float c_a_z = c.position.z - a.position.z;
+
+	// coordinate transform
 	vec2 b_a_position;
 	b_a_position.x = b.position.x - a.position.x;
 	b_a_position.y = -a_b_y;
 	vec2 c_a_position;
 	c_a_position.x = c.position.x - a.position.x;
 	c_a_position.y = c_a_y;
-	// coordinate transform
 	float determinant = b_a_position.x * c_a_position.y - b_a_position.y * c_a_position.x;
 	mat2x2 inv_coord_transform;
 	inv_coord_transform.m[0][0] = c_a_position.y / determinant;
 	inv_coord_transform.m[0][1] = -b_a_position.y / determinant;
 	inv_coord_transform.m[1][0] = -c_a_position.x / determinant;
 	inv_coord_transform.m[1][1] = b_a_position.x / determinant;
+
 	for (int y = top; y < bottom; ++y) {
 		for (int x = left; x < right; ++x) {
 			float x_f = (float)x;
@@ -302,12 +307,17 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 			// the point is same side with another triangle point in each in 3 side
 			bool inside = (tmp * side0 >= -0.f) && (tmp * side1 >= -0.f) && (tmp * side2 >= -0.f);
 			if (inside) {
-				unsigned result_color = 0;
 				float u, v;
 				u = x_f * inv_coord_transform.m[0][0] + y_f * inv_coord_transform.m[1][0];
 				v = x_f * inv_coord_transform.m[0][1] + y_f * inv_coord_transform.m[1][1];
-				result_color = u * b_a_color + v * c_a_color;
-				back_buffer[x + y * window_width] = result_color;
+				// depth test
+				float pixel_depth = 1 / (a.position.z + u * b_a_z + v * c_a_z);
+				if (pixel_depth > z_buffer[x + y * window_width]) {
+					z_buffer[x + y * window_width] = pixel_depth;
+					unsigned result_color = 0;
+					pixel_color = u * b_a_color + v * c_a_color;
+					back_buffer[x + y * window_width] = pixel_color;
+				}
 			}
 		}
 	}
