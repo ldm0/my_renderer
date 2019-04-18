@@ -182,13 +182,84 @@ int my_obj_get_vp(
 	return 0;
 }
 
-static inline void read_f_elements(my_obj_f *tmp_f, char *str)
+static inline int isdigit(char *ch)
+{
+	return (*ch <= '9' && *ch >= '0');
+}
+
+static inline int get_unsigned_number(unsigned *_result, char* str, int* top)
+{
+	if (str[*top] == 0 && str[*top] == ' ' && str[*top] == '\\')
+		return 0;
+	int result = 0;
+	do {
+		if (!isdigit(&str[*top]))
+			return -1;
+		result = result * 10 + (str[*top] - '0');
+		++*top;
+	} while (str[*top] != 0 && str[*top] != ' ' && str[*top] != '\\');
+	*_result = result;
+	return 0;
+}
+
+static inline int read_f_elements(my_obj_f *tmp_f, char *str)
 {
 	int top = 0;
-	while (str[top] != 0 && str[top] != ' ' && str[top] != '\n' && str[top] != '\\') {
-		
+	if (get_unsigned_number(&(tmp_f->v1), str, &top) != 0)
+		return -1;
+	if (str[top] == ' ') {
 		++top;
+		if (get_unsigned_number(&(tmp_f->v2), str, &top) != 0)
+			return -1;
+		++top;
+		if (get_unsigned_number(&(tmp_f->v3), str, &top) != 0)
+			return -1;
+	} else if (str[top] == '\\') {
+		++top;
+		if (get_unsigned_number(&(tmp_f->vt1), str, &top) != 0)
+			return -1;
+		if (str[top] == ' ') {
+			++top;
+			if (get_unsigned_number(&(tmp_f->v2), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->vt2), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->v3), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->vt3), str, &top) != 0)
+				return -1;
+		} else if (str[top] == '\\') {
+			++top;
+			if (get_unsigned_number(&(tmp_f->vn1), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->v2), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->vt2), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->vn2), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->v3), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->vt3), str, &top) != 0)
+				return -1;
+			++top;
+			if (get_unsigned_number(&(tmp_f->vn3), str, &top) != 0)
+				return -1;
+		} else /*if (str[top] == 0)*/ {
+			return -1;
+		}
+	} else /*if (str[top] == 0)*/ {
+		return -1;
 	}
+	return 0;
 }
 
 int my_obj_get_f(
@@ -210,7 +281,8 @@ int my_obj_get_f(
 		char str[MAX_LINE_LENGTH] = {0};
 		if (fscanf_s(obj_file, "f %[^\n]", str, MAX_LINE_LENGTH) != 1)
 			break;
-		read_f_elements(&tmp_f, str);
+		if (read_f_elements(&tmp_f, str) != 0)
+			break;
 		if (tmp_f_buffer_top >= tmp_f_buffer_capacity) {
 			tmp_f_buffer_capacity += tmp_f_buffer_capacity >> 1;		// capacity multiply 1.5, for memory reuse
 			my_obj_f *new_tmp_f_buffer = (my_obj_f *)my_obj_malloc(tmp_f_buffer_capacity * sizeof(my_obj_f));
