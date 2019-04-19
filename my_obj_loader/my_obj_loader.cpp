@@ -2,13 +2,14 @@
 
 #include<stdio.h>
 
-#define MAX_LINE_LENGTH				233
-#define DEFAULT_V_BUFFER_LENGTH		64
-#define DEFAULT_VT_BUFFER_LENGTH	64
-#define DEFAULT_VN_BUFFER_LENGTH	64
-#define DEFAULT_VP_BUFFER_LENGTH	32
-#define DEFAULT_F_BUFFER_LENGTH		32
-#define DEFAULT_L_BUFFER_LENGTH		32
+#define MAX_LINE_LENGTH					233
+#define DEFAULT_V_BUFFER_LENGTH			64
+#define DEFAULT_VT_BUFFER_LENGTH		64
+#define DEFAULT_VN_BUFFER_LENGTH		64
+#define DEFAULT_VP_BUFFER_LENGTH		32
+#define DEFAULT_F_BUFFER_LENGTH			32
+#define DEFAULT_L_BUFFER_LENGTH			32
+#define DEFAULT_L_INDEX_BUFFER_LENGTH	8
 
 // For customizable client memory management
 static void* (*my_obj_malloc)(size_t size);
@@ -47,6 +48,20 @@ error:
 	if (obj_fs)
 		fclose(obj_fs);
 	return -1;
+}
+
+void my_obj_release_elements(my_obj_elements * elements)
+{
+	my_obj_free(elements->v_buffer);
+	my_obj_free(elements->vt_buffer);
+	my_obj_free(elements->vn_buffer);
+	my_obj_free(elements->vp_buffer);
+	my_obj_free(elements->f_buffer);
+	unsigned num_l_buffer = elements->num_l;
+	for (unsigned i = 0; i < num_l_buffer; ++i) {
+		my_obj_free(elements->l_buffer[i].v);
+	}
+	my_obj_free(elements->l_buffer);
 }
 
 int my_obj_get_v(
@@ -182,22 +197,27 @@ int my_obj_get_vp(
 	return 0;
 }
 
-static inline int isdigit(char *ch)
+static inline int isdigit(char ch)
 {
-	return (*ch <= '9' && *ch >= '0');
+	return (ch <= '9' && ch >= '0');
 }
 
+static inline void ws_remove(char *str, int *top)
+{
+	while (str[*top] == ' ')
+		++*top;
+}
+
+// return -1 when no number could be get
 static inline int get_unsigned_number(unsigned *_result, char* str, int* top)
 {
-	if (str[*top] == 0 && str[*top] == ' ' && str[*top] == '\\')
-		return 0;
+	if (!isdigit(str[*top]))
+		return -1;
 	int result = 0;
 	do {
-		if (!isdigit(&str[*top]))
-			return -1;
 		result = result * 10 + (str[*top] - '0');
 		++*top;
-	} while (str[*top] != 0 && str[*top] != ' ' && str[*top] != '\\');
+	} while (isdigit(str[*top]));
 	*_result = result;
 	return 0;
 }
@@ -208,49 +228,61 @@ static inline int read_f_elements(my_obj_f *tmp_f, char *str)
 	if (get_unsigned_number(&(tmp_f->v1), str, &top) != 0)
 		return -1;
 	if (str[top] == ' ') {
-		++top;
+		ws_remove(str, &top);
 		if (get_unsigned_number(&(tmp_f->v2), str, &top) != 0)
 			return -1;
-		++top;
+
+		ws_remove(str, &top);
 		if (get_unsigned_number(&(tmp_f->v3), str, &top) != 0)
 			return -1;
 	} else if (str[top] == '\\') {
 		++top;
-		if (get_unsigned_number(&(tmp_f->vt1), str, &top) != 0)
-			return -1;
+		ws_remove(str, &top);
+		// don't return -1 when failed because no digit is allowed
+		get_unsigned_number(&(tmp_f->vt1), str, &top);
 		if (str[top] == ' ') {
-			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->v2), str, &top) != 0)
 				return -1;
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vt2), str, &top) != 0)
 				return -1;
-			++top;
+
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->v3), str, &top) != 0)
 				return -1;
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vt3), str, &top) != 0)
 				return -1;
 		} else if (str[top] == '\\') {
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vn1), str, &top) != 0)
 				return -1;
-			++top;
+
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->v2), str, &top) != 0)
 				return -1;
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vt2), str, &top) != 0)
 				return -1;
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vn2), str, &top) != 0)
 				return -1;
-			++top;
+
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->v3), str, &top) != 0)
 				return -1;
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vt3), str, &top) != 0)
 				return -1;
 			++top;
+			ws_remove(str, &top);
 			if (get_unsigned_number(&(tmp_f->vn3), str, &top) != 0)
 				return -1;
 		} else /*if (str[top] == 0)*/ {
@@ -268,7 +300,7 @@ int my_obj_get_f(
 	my_obj_f **f_buffer)
 {
 	unsigned tmp_f_buffer_top = 0;
-	unsigned tmp_f_buffer_capacity = DEFAULT_V_BUFFER_LENGTH;
+	unsigned tmp_f_buffer_capacity = DEFAULT_F_BUFFER_LENGTH;
 	my_obj_f *tmp_f_buffer = (my_obj_f *)my_obj_malloc(tmp_f_buffer_capacity * sizeof(my_obj_f));
 	if (!tmp_f_buffer)
 		return -1;
@@ -279,7 +311,7 @@ int my_obj_get_f(
 			-1, -1, -1,
 			-1, -1, -1,};
 		char str[MAX_LINE_LENGTH] = {0};
-		if (fscanf_s(obj_file, "f %[^\n]", str, MAX_LINE_LENGTH) != 1)
+		if (fscanf_s(obj_file, "f%[^\n]", str, MAX_LINE_LENGTH) != 1)
 			break;
 		if (read_f_elements(&tmp_f, str) != 0)
 			break;
@@ -308,4 +340,53 @@ int my_obj_get_l(
 	unsigned *l_buffer_length,
 	my_obj_l **l_buffer)
 {
+	unsigned tmp_l_buffer_top = 0;
+	unsigned tmp_l_buffer_capacity = DEFAULT_L_BUFFER_LENGTH;
+	my_obj_l *tmp_l_buffer = (my_obj_l *)my_obj_malloc(tmp_l_buffer_capacity * sizeof(my_obj_l));
+	if (!tmp_l_buffer)
+		return -1;
+
+	my_obj_l tmp_l;
+	for (;;) {
+		tmp_l.size = 0;
+		unsigned tmp_val;
+		if (fscanf_s(obj_file, "l %u", &tmp_val) != 1)
+			break;
+		unsigned tmp_l_index_capacity = DEFAULT_L_INDEX_BUFFER_LENGTH;
+		tmp_l.v = (unsigned *)my_obj_malloc(tmp_l_index_capacity * sizeof(unsigned));
+		if (!tmp_l.v)
+			return -1;
+		do {
+			if (tmp_l.size >= tmp_l_index_capacity) {
+				tmp_l_index_capacity += tmp_l_index_capacity >> 1;
+				unsigned *new_v = (unsigned *)my_obj_malloc(tmp_l_index_capacity * sizeof(unsigned));
+				if (!new_v)
+					return -1;
+				unsigned length = tmp_l.size;
+				for (unsigned i = 0; i < length; ++i)
+					new_v[i] = tmp_l.v[i];
+				my_obj_free(tmp_l.v);
+				tmp_l.v = new_v;
+			}
+			tmp_l.v[tmp_l.size++] = tmp_val;
+		} while (fscanf_s(obj_file, "%u", &tmp_val) == 1);
+		
+		if (tmp_l_buffer_top >= tmp_l_buffer_capacity) {
+			tmp_l_buffer_capacity += tmp_l_buffer_capacity >> 1;		// capacity multiply 1.5, for memory reuse
+			my_obj_l *new_tmp_l_buffer = (my_obj_l *)my_obj_malloc(tmp_l_buffer_capacity * sizeof(my_obj_l));
+			if (!new_tmp_l_buffer)
+				return -1;
+			for (unsigned i = 0; i < tmp_l_buffer_top; ++i)
+				new_tmp_l_buffer[i] = tmp_l_buffer[i];
+			my_obj_free(tmp_l_buffer);
+			tmp_l_buffer = new_tmp_l_buffer;
+		}
+		tmp_l_buffer[tmp_l_buffer_top] = tmp_l;
+		++tmp_l_buffer_top;
+	};
+
+	// avoid cache miss and multi thread things
+	*l_buffer = tmp_l_buffer;
+	*l_buffer_length = tmp_l_buffer_top;
+	return 0;
 }
