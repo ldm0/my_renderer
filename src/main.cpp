@@ -3,44 +3,10 @@
 #include<Windows.h>
 #include<time.h>
 #include<math.h>
-#include<stdio.h>	// for debug
+#include<stdio.h>	// for print debug info
 #include<stdlib.h>	// for malloc space for storing model mesh
 
 #define renderer Renderer::get()
-
-// code below are for testing
-/*
-#define CUBE_MESH_FACES_LENGTH 12
-#define CUBE_MESH_VERTICES_LENGTH 8
-
-Renderer::Face cube_mesh_faces[CUBE_MESH_FACES_LENGTH] = {
-	// Top, bottom, left, right, front, back
-	{4, 5, 0},
-	{5, 1, 0},
-	{3, 2, 7},
-	{2, 6, 7},
-	{4, 0, 7},
-	{0, 3, 7},
-	{1, 5, 2},
-	{5, 6, 2},
-	{0, 1, 3},
-	{1, 2, 3},
-	{5, 4, 6},
-	{4, 7, 6},
-};
-
-// left hand coordinate system
-Renderer::Vertex cube_mesh_vertices[CUBE_MESH_VERTICES_LENGTH] = {
-	{-1, 1, -1, 1},
-	{1, 1, -1, 1},
-	{1, -1, -1, 1},
-	{-1, -1, -1, 1},
-	{-1, 1, 1, 1},
-	{1, 1, 1, 1},
-	{1, -1, 1, 1},
-	{-1, -1, 1, 1},
-};
-*/
 
 bool key_down[256] = {false};
 bool window_exit = false;
@@ -177,28 +143,13 @@ int main()
 		return -1;
 
 	// load mesh from file
-	unsigned bunny_mesh_vertices_length;
-	unsigned bunny_mesh_faces_length;
-	Renderer::Vertex * bunny_mesh_vertices;
-	Renderer::Face * bunny_mesh_faces;
-	FILE * fs;
-	fopen_s(&fs, "output.simple", "r");
-	if (!fs)
-		return -1;
-	read_simple_model_header(fs, &bunny_mesh_vertices_length, &bunny_mesh_faces_length);
-	bunny_mesh_vertices = (Renderer::Vertex *)malloc(bunny_mesh_vertices_length * sizeof(Renderer::Vertex));
-	bunny_mesh_faces = (Renderer::Face *)malloc(bunny_mesh_faces_length * sizeof(Renderer::Face));
-	read_simple_model_mesh_vertices(fs, bunny_mesh_vertices_length, (simple_vertex *)bunny_mesh_vertices);
-	read_simple_model_mesh_faces(fs, bunny_mesh_faces_length, (simple_face *)bunny_mesh_faces);
-	fclose(fs);
+	my_obj_elements mesh;
+	my_obj_set_allocator(malloc, free);
+	my_obj_get_mesh("./bunny.obj", &mesh);
 
 	camera_reset();
 	// load mesh to renderer
-	renderer.load_mesh(
-		bunny_mesh_vertices,
-		bunny_mesh_vertices_length,
-		bunny_mesh_faces,
-		bunny_mesh_faces_length);
+	renderer.load_mesh(&mesh);
 	while (!window_exit) {
 		event_dispatch();
 		camera_control();
@@ -206,7 +157,8 @@ int main()
 		renderer.draw();
 		renderer.refresh();
 	}
-	free(bunny_mesh_faces);
-	free(bunny_mesh_vertices);
+
+	my_obj_release_elements(&mesh);
+
 	return 0;
 }

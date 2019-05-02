@@ -3,34 +3,40 @@
 #ifndef _MY_OBJ_LOADER_H_
 #define _MY_OBJ_LOADER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include<stdio.h>
 
-// vertices x, y, z
+// vertices pool
 typedef struct my_obj_v {
 	float x, y, z;
 } my_obj_v;
 
-// texture coordinates
+// texture coordinates pool
 typedef struct my_obj_vt {
 	float u, v;
 } my_obj_vt;
 
-// vertex normal
+// vertex normal pool
 typedef struct my_obj_vn {
 	float x, y, z;
 } my_obj_vn;
 
-// Parameter space vertices
+// parameter space vertices (sounds good but I don't know how it's used. :-P)
 typedef struct my_obj_vp {
 	float u, v, w;
 } my_obj_vp;
 
+// faces members are all pointers points to pool before (member can be -1 which indicates its empty)
 typedef struct my_obj_f {
-	unsigned v1, v2, v3;
-	unsigned vt1, vt2, vt3;
-	unsigned vn1, vn2, vn3;
+	int v1, v2, v3;
+	int vt1, vt2, vt3;
+	int vn1, vn2, vn3;
 } my_obj_f;
 
+// line (vertex pointer array)
 typedef struct my_obj_l {
 	unsigned size;
 	unsigned *v;
@@ -53,14 +59,17 @@ typedef struct my_obj_elements {
 
 void my_obj_set_allocator(
 	void* (*func_malloc)(size_t size),
-	void* (*func_realloc)(void *memory, size_t size), 
 	void (*func_free)(void* memory));
 
-int my_obj_get_elements(
-	char *file_name,
+int my_obj_get_mesh(
+	const char *file_name,
 	my_obj_elements *elements);
 
 void my_obj_release_elements( 
 	my_obj_elements *elements);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

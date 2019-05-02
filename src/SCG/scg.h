@@ -11,8 +11,8 @@ extern "C" {
 
 // top-down color bits
 extern unsigned *scg_back_buffer;
-extern int window_width;
-extern int window_height;
+extern int scg_window_width;
+extern int scg_window_height;
 
 // title can be set to NULL, when you don't want to specify the title
 // event_process can be set to NULL, when call_back event process function is not needed, 

@@ -4,8 +4,8 @@
 
 // exposed
 unsigned* scg_back_buffer = NULL;
-int window_width = 0;
-int window_height = 0;
+int scg_window_width = 0;
+int scg_window_height = 0;
 
 static const TCHAR *window_title = _T("default window title");
 static HWND window_handle = 0;
@@ -39,8 +39,8 @@ int scg_create_window(int width, int height, const TCHAR* title, WNDPROC event_p
 	if (!window_class_atom)
 		return -1;
 
-	window_width = width;
-	window_height = height;
+	scg_window_width = width;
+	scg_window_height = height;
 	RECT tmp_rect = {0, 0, width, height};
 	AdjustWindowRect(&tmp_rect, window_style, 0);
 	// width and height plus window frame width height
@@ -67,12 +67,12 @@ int scg_create_window(int width, int height, const TCHAR* title, WNDPROC event_p
 
 	BITMAPINFO bmp_info = {{0}};
 	bmp_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmp_info.bmiHeader.biWidth = window_width;
-	bmp_info.bmiHeader.biHeight = -window_height;		// top_down dib section
+	bmp_info.bmiHeader.biWidth = scg_window_width;
+	bmp_info.bmiHeader.biHeight = -scg_window_height;		// top_down dib section
 	bmp_info.bmiHeader.biPlanes = 1;
 	bmp_info.bmiHeader.biBitCount = 32;
 	bmp_info.bmiHeader.biCompression = BI_RGB;
-	bmp_info.bmiHeader.biSizeImage = window_width * window_height * 4;
+	bmp_info.bmiHeader.biSizeImage = scg_window_width * scg_window_height * 4;
 	bmp_info.bmiHeader.biXPelsPerMeter = 2835;
 	bmp_info.bmiHeader.biYPelsPerMeter = 2835;
 	bmp_info.bmiHeader.biClrUsed = 0;
@@ -110,6 +110,6 @@ void scg_close_window(void)
 void scg_refresh(void)
 {
 	HDC main_dc = GetDC(window_handle);
-	BitBlt(main_dc, 0, 0, window_width, window_height, back_buffer_dc, 0, 0, SRCCOPY);
+	BitBlt(main_dc, 0, 0, scg_window_width, scg_window_height, back_buffer_dc, 0, 0, SRCCOPY);
 	ReleaseDC(window_handle, main_dc);
 }

@@ -1,5 +1,6 @@
 #include"my_renderer.h"
 #include"my_graphic.h"
+#include"my_obj_loader/my_obj_loader.h"
 #include"SCG/scg.h"
 #include<Windows.h>
 #include<stdlib.h>		// for malloc
@@ -8,14 +9,11 @@
 
 Renderer::Renderer()
 	:draw_mode(DRAW_MESH_COLOR),
+	yaw_pitch_roll({0}),
+	camera_position({0}),
 	back_buffer(0),
 	z_buffer(0),
-	camera_position({0}),
-	yaw_pitch_roll({0}),
-	mesh_faces_length(0),
-	mesh_faces(0),
-	mesh_vertices_length(0),
-	mesh_vertices(0),
+	mesh(0),
 	texture_width(0),
 	texture_height(0),
 	texture(0),
@@ -36,8 +34,8 @@ Renderer& Renderer::get(void)
 
 int Renderer::create_window(int width, int height, const TCHAR* title, WNDPROC event_process)
 {
-	window_width = width;
-	window_height = height;
+	scg_window_width = width;
+	scg_window_height = height;
 
 	if (scg_create_window(width, height, title, event_process))
 		return -1;
@@ -45,7 +43,7 @@ int Renderer::create_window(int width, int height, const TCHAR* title, WNDPROC e
 	back_buffer = scg_back_buffer;
 
 	// create depth buffer with the same width and height
-	z_buffer = (float *)malloc((unsigned long long)window_width * (unsigned long long)window_height * sizeof(float));
+	z_buffer = (float *)malloc((unsigned long long)scg_window_width * (unsigned long long)scg_window_height * sizeof(float));
 	if (!z_buffer)
 		return -1;
 
@@ -69,23 +67,20 @@ void Renderer::clear(void)
 {
 #define block_size 32 
 #define block_color 0x7f
-	for (int y = 0; y < window_height; ++y) {
-		for (int x = 0; x < window_width; ++x) {
+	for (int y = 0; y < scg_window_height; ++y) {
+		for (int x = 0; x < scg_window_width; ++x) {
 			int b_color = (((x / block_size) % 2) ^ ((y / block_size) % 2)) * block_color;
-			back_buffer[x + y * window_width] = b_color << 16 | b_color << 8 | b_color;
-			z_buffer[x + y * window_width] = 0.f;
+			back_buffer[x + y * scg_window_width] = b_color << 16 | b_color << 8 | b_color;
+			z_buffer[x + y * scg_window_width] = 0.f;
 		}
 	}
 #undef block_color
 #undef block_size
 }
 
-void Renderer::load_mesh(const Vertex * _mesh, unsigned _mesh_length, const Face * _mesh_faces, unsigned _mesh_indices_length)
+void Renderer::load_mesh(my_obj_elements *_mesh)
 {
-	mesh_vertices = _mesh;
-	mesh_vertices_length = _mesh_length;
-	mesh_faces = _mesh_faces;
-	mesh_faces_length = _mesh_indices_length;
+	mesh = _mesh;
 }
 
 void Renderer::load_texture(unsigned width, unsigned height, const unsigned *tex)
@@ -97,11 +92,6 @@ void Renderer::load_texture(unsigned width, unsigned height, const unsigned *tex
 
 void Renderer::draw(void)
 {
-	if (!mesh_vertices_length
-		|| !mesh_vertices
-		|| !mesh_faces_length
-		|| !mesh_faces)
-		return;
 	for (unsigned i = 0; i < mesh_faces_length; ++i) {
 		Vertex a = mesh_vertices[mesh_faces[i].x];
 		Vertex b = mesh_vertices[mesh_faces[i].y];
@@ -115,14 +105,14 @@ void Renderer::draw(void)
 		// Clip
 
 		// Screen mapping
-		float scale = fminf((float)window_width, (float)window_height);
-		a.position.x = a.position.x * scale + .5f * window_width;
-		b.position.x = b.position.x * scale + .5f * window_width;
-		c.position.x = c.position.x * scale + .5f * window_width;
+		float scale = fminf((float)scg_window_width, (float)scg_window_height);
+		a.position.x = a.position.x * scale + .5f * scg_window_width;
+		b.position.x = b.position.x * scale + .5f * scg_window_width;
+		c.position.x = c.position.x * scale + .5f * scg_window_width;
 		// negative sign for origin at top-left corner
-		a.position.y = -a.position.y * scale + .5f * window_height;
-		b.position.y = -b.position.y * scale + .5f * window_height;
-		c.position.y = -c.position.y * scale + .5f * window_height;
+		a.position.y = -a.position.y * scale + .5f * scg_window_height;
+		b.position.y = -b.position.y * scale + .5f * scg_window_height;
+		c.position.y = -c.position.y * scale + .5f * scg_window_height;
 
 		// Rasterize
 		if (draw_mode == DRAW_MESH_COLOR || draw_mode == DRAW_MESH)
@@ -138,29 +128,30 @@ void Renderer::draw_line(Vertex a, Vertex b)
 	float a_b_x = a.position.x - b.position.x;
 	float a_b_y = a.position.y - b.position.y;
 	float a_b_z = a.position.z - b.position.z;
+	unsigned line_color = 0x00ffffff;
 	if (fabsf(a_b_x) < fabsf(a_b_y)) {
-		int top = (int)clampf(fminf(a.position.y, b.position.y), 0, (float)window_height);
-		int bottom = (int)clampf(fmaxf(a.position.y, b.position.y), 0, (float)window_height);
+		int top = (int)clampf(fminf(a.position.y, b.position.y), 0, (float)scg_window_height);
+		int bottom = (int)clampf(fmaxf(a.position.y, b.position.y), 0, (float)scg_window_height);
 		for (int y = top; y < bottom; ++y) {
 			float depth = 1 / (a.position.z - a_b_z * (a.position.y - y) / a_b_y);
 			int x = (int)((b.position.x * (a.position.y - (float)y) + a.position.x * ((float)y - b.position.y)) / a_b_y);
-			if (x >= 0 && x < window_width) {
-				if (depth >= z_buffer[x + y * window_width]) {
-					z_buffer[x + y * window_width] = depth;
-					back_buffer[x + y * window_width] = 0x00ffffff;
+			if (x >= 0 && x < scg_window_width) {
+				if (depth >= z_buffer[x + y * scg_window_width]) {
+					z_buffer[x + y * scg_window_width] = depth;
+					back_buffer[x + y * scg_window_width] = line_color;
 				}
 			}
 		}
 	} else {
-		int left = (int)clampf(fminf(a.position.x, b.position.x), 0, (float)window_width);
-		int right = (int)clampf(fmaxf(a.position.x, b.position.x), 0, (float)window_width);
+		int left = (int)clampf(fminf(a.position.x, b.position.x), 0, (float)scg_window_width);
+		int right = (int)clampf(fmaxf(a.position.x, b.position.x), 0, (float)scg_window_width);
 		for (int x = left; x < right; ++x) {
 			float depth = 1 / (a.position.z + a_b_z * (a.position.x - x) / a_b_x);
 			int y = (int)((b.position.y * (a.position.x - (float)x) + a.position.y * ((float)x - b.position.x)) / a_b_x);
-			if (y >= 0 && y < window_height) {
-				if (depth >= z_buffer[x + y * window_width]) {
-					z_buffer[x + y * window_width] = depth;
-					back_buffer[x + y * window_width] = 0x00ffffff;
+			if (y >= 0 && y < scg_window_height) {
+				if (depth >= z_buffer[x + y * scg_window_width]) {
+					z_buffer[x + y * scg_window_width] = depth;
+					back_buffer[x + y * scg_window_width] = line_color;
 				}
 			}
 		}
@@ -176,8 +167,8 @@ void Renderer::draw_triangle_edge(Vertex a, Vertex b, Vertex c)
 
 void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 {
-	float window_height_f = (float)window_height;
-	float window_width_f = (float)window_width;
+	float window_height_f = (float)scg_window_height;
+	float window_width_f = (float)scg_window_width;
 	// get scan area
 	float left_f = clampf(fminf(fminf(a.position.x, b.position.x), c.position.x), 0.f, window_width_f);
 	float right_f = clampf(fmaxf(fmaxf(a.position.x, b.position.x), c.position.x), 0.f, window_width_f);
@@ -251,10 +242,10 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 				v = ((x_f - a.position.x) * inv_coord_transform.m[0][1] + (y_f - a.position.y) * inv_coord_transform.m[1][1]) / length2;
 				// depth test
 				float pixel_depth = 1 / (a.position.z + u * b_a_z + v * c_a_z);
-				if (pixel_depth > z_buffer[x + y * window_width]) {
-					z_buffer[x + y * window_width] = pixel_depth;
+				if (pixel_depth > z_buffer[x + y * scg_window_width]) {
+					z_buffer[x + y * scg_window_width] = pixel_depth;
 					unsigned pixel_color = (unsigned)(a.position.y + u * b_a_color + v * c_a_color);
-					back_buffer[x + y * window_width] = pixel_color << 8;
+					back_buffer[x + y * scg_window_width] = pixel_color << 8;
 				}
 			}
 		}

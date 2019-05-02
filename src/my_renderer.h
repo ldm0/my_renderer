@@ -4,6 +4,7 @@
 #define _MY_RENDERER_H_
 
 #include"my_graphic.h"
+#include"my_obj_loader/my_obj_loader.h"
 #include<Windows.h>
 #include<tchar.h>
 
@@ -15,12 +16,9 @@ public:
 		DRAW_COLOR,
 		DRAW_MESH_COLOR,
 	} draw_mode;
-	// special structures
-	struct Vertex { vec4 position; };
-	struct Face { unsigned x, y, z; };
 
 #pragma region camera
-	// initial direction is fixed to (0, 0, 1)
+	// initial direction is (0, 0, 1)
 	// Assume left hand coordinates
 	// yaw: y, pitch: x, roll: z
 	vec3 yaw_pitch_roll;
@@ -34,10 +32,7 @@ private:
 #pragma endregion
 
 #pragma region mesh
-	unsigned mesh_vertices_length;
-	const Vertex* mesh_vertices;
-	unsigned mesh_faces_length;
-	const Face* mesh_faces;
+	my_obj_elements *mesh;
 #pragma endregion
 
 #pragma region texture
@@ -49,11 +44,11 @@ private:
 	Renderer();
 
 	// three vertices should be transformed properly
-	void draw_triangle(Vertex a, Vertex b, Vertex c);
+	void draw_triangle(my_obj_f face);
 
-	void draw_triangle_edge(Vertex a, Vertex b, Vertex c);
+	void draw_triangle_edge(my_obj_v a, my_obj_v b, my_obj_v c);
 
-	void draw_line(Vertex a, Vertex b);
+	void draw_line(my_obj_v a, my_obj_v b);
 
 public:
 	bool window_exit;
@@ -70,7 +65,7 @@ public:
 	void close_window(void);
 
 	// load mesh want show in screen
-	void load_mesh(const Vertex* mesh, unsigned mesh_length, const Face *mesh_faces, unsigned mesh_faces_length);
+	void load_mesh(my_obj_elements *mesh);
 
 	// load texture(only one texture in current renderer)
 	void load_texture(unsigned width, unsigned height, const unsigned *texture);
