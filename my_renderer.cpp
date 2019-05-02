@@ -266,7 +266,7 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 		+ c_a_y * b.position.x
 		+ a_b_y * c.position.x;
 
-	// currently just use position_y as color 
+	// currently just use position_y as color for testing
 	// so I don't use c_a_y used before
 	float b_a_color = b.position.y - a.position.y;
 	float c_a_color = c.position.y - a.position.y;
@@ -278,9 +278,16 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 	vec2 b_a_position;
 	b_a_position.x = b.position.x - a.position.x;
 	b_a_position.y = -a_b_y;
+	float length1 = sqrtf(b_a_position.x * b_a_position.x + b_a_position.y * b_a_position.y);
+	b_a_position.x /= length1;
+	b_a_position.y /= length1;
 	vec2 c_a_position;
 	c_a_position.x = c.position.x - a.position.x;
 	c_a_position.y = c_a_y;
+	float length2 = sqrtf(c_a_position.x * c_a_position.x + c_a_position.y * c_a_position.y);
+	c_a_position.x /= length2;
+	c_a_position.y /= length2;
+
 	float determinant = b_a_position.x * c_a_position.y - b_a_position.y * c_a_position.x;
 	mat2x2 inv_coord_transform;
 	inv_coord_transform.m[0][0] = c_a_position.y / determinant;
@@ -308,15 +315,14 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 			bool inside = (tmp * side0 >= -0.f) && (tmp * side1 >= -0.f) && (tmp * side2 >= -0.f);
 			if (inside) {
 				float u, v;
-				u = x_f * inv_coord_transform.m[0][0] + y_f * inv_coord_transform.m[1][0];
-				v = x_f * inv_coord_transform.m[0][1] + y_f * inv_coord_transform.m[1][1];
+				u = ((x_f - a.position.x) * inv_coord_transform.m[0][0] + (y_f - a.position.y) * inv_coord_transform.m[1][0]) / length1;
+				v = ((x_f - a.position.x) * inv_coord_transform.m[0][1] + (y_f - a.position.y) * inv_coord_transform.m[1][1]) / length2;
 				// depth test
 				float pixel_depth = 1 / (a.position.z + u * b_a_z + v * c_a_z);
 				if (pixel_depth > z_buffer[x + y * window_width]) {
 					z_buffer[x + y * window_width] = pixel_depth;
-					unsigned result_color = 0;
-					pixel_color = u * b_a_color + v * c_a_color;
-					back_buffer[x + y * window_width] = pixel_color;
+					unsigned pixel_color = a.position.y + u * b_a_color + v * c_a_color;
+					back_buffer[x + y * window_width] = pixel_color << 8;
 				}
 			}
 		}
