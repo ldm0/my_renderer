@@ -28,26 +28,6 @@ public:
 #pragma endregion
 
 private:
-#pragma region window
-	int window_width;
-	int window_height;
-	const TCHAR* window_title;
-	HWND window_handle;
-	WNDCLASS window_class;
-	ATOM window_class_atom;
-
-	// The device context of second buffer.
-	HDC back_buffer_dc;
-
-	// Working DIB buffer in the back, belongs to second_buffer_dc.
-	// It is being write and being block transferred to main window description each frame.
-	HBITMAP back_buffer_handle;
-
-	// old DIB buffer created with screen_buffer_dc, 
-	// store to release in the end. 
-	HBITMAP back_buffer_original_handle;
-#pragma endregion
-
 #pragma region buffers
 	unsigned* back_buffer;
 	float *z_buffer;

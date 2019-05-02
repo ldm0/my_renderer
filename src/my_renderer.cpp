@@ -1,5 +1,6 @@
 #include"my_renderer.h"
 #include"my_graphic.h"
+#include"SCG/scg.h"
 #include<Windows.h>
 #include<stdlib.h>		// for malloc
 #include<tchar.h>
@@ -7,15 +8,6 @@
 
 Renderer::Renderer()
 	:draw_mode(DRAW_MESH_COLOR),
-	window_width(0),
-	window_height(0),
-	window_title(0),
-	window_handle(0),
-	window_class({0}),
-	window_class_atom(0),
-	back_buffer_dc(0),
-	back_buffer_handle(0),
-	back_buffer_original_handle(0),
 	back_buffer(0),
 	z_buffer(0),
 	camera_position({0}),
@@ -44,75 +36,18 @@ Renderer& Renderer::get(void)
 
 int Renderer::create_window(int width, int height, const TCHAR* title, WNDPROC event_process)
 {
-	// classic window and cannot be resized
-	DWORD window_style = WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME);
-
-	window_title = title;
-
-	window_class.style = CS_BYTEALIGNWINDOW | CS_BYTEALIGNCLIENT;
-	window_class.lpfnWndProc = event_process;
-	window_class.cbClsExtra = 0;
-	window_class.cbWndExtra = 0;
-	window_class.hInstance = 0;
-	window_class.hIcon = NULL;
-	window_class.hCursor = LoadCursor(0, IDC_ARROW);
-	window_class.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
-	window_class.lpszMenuName = NULL;
-	window_class.lpszClassName = _T("MainWndClass");
-	window_class_atom = RegisterClass(&window_class);
-	if (!window_class_atom)
-		return -1;
-
 	window_width = width;
 	window_height = height;
-	RECT tmp_rect = {0, 0, width, height};
-	AdjustWindowRect(&tmp_rect, window_style, 0);
-	// width and height plus window frame width height
-	long tmp_window_width = tmp_rect.right - tmp_rect.left;
-	long tmp_window_height = tmp_rect.bottom - tmp_rect.top;
-	window_handle = CreateWindow(
-		(LPCTSTR)window_class_atom,
-		title,
-		window_style,
-		(GetSystemMetrics(SM_CXSCREEN) - tmp_window_width) / 2,
-		(GetSystemMetrics(SM_CYSCREEN) - tmp_window_height) / 2,
-		tmp_window_width,
-		tmp_window_height,
-		NULL,
-		NULL,
-		window_class.hInstance,
-		NULL);
-	if (!window_handle)
+
+	if (scg_create_window(width, height, title, event_process))
 		return -1;
 
-	HDC main_dc = GetDC(window_handle);
-	back_buffer_dc = CreateCompatibleDC(main_dc);
-	ReleaseDC(window_handle, main_dc);
-
-	BITMAPINFO bmp_info = {{0}};
-	bmp_info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmp_info.bmiHeader.biWidth = window_width;
-	bmp_info.bmiHeader.biHeight = -window_height;		// top_down dib section
-	bmp_info.bmiHeader.biPlanes = 1;
-	bmp_info.bmiHeader.biBitCount = 32;
-	bmp_info.bmiHeader.biCompression = BI_RGB;
-	bmp_info.bmiHeader.biSizeImage = window_width * window_height * 4;
-	bmp_info.bmiHeader.biXPelsPerMeter = 2835;
-	bmp_info.bmiHeader.biYPelsPerMeter = 2835;
-	bmp_info.bmiHeader.biClrUsed = 0;
-	bmp_info.bmiHeader.biClrImportant = 0;
-	back_buffer_handle = CreateDIBSection(back_buffer_dc, &bmp_info, DIB_RGB_COLORS, (void**)& back_buffer, 0, 0);
-	if (!back_buffer_handle)
-		return -1;
-
-	// swap out the old buffer
-	back_buffer_original_handle = (HBITMAP)SelectObject(back_buffer_dc, back_buffer_handle);
+	back_buffer = scg_back_buffer;
 
 	// create depth buffer with the same width and height
 	z_buffer = (float *)malloc((unsigned long long)window_width * (unsigned long long)window_height * sizeof(float));
-
-	ShowWindow(window_handle, SW_SHOW);
-	SetForegroundWindow(window_handle);
+	if (!z_buffer)
+		return -1;
 
 	return 0;
 }
@@ -122,26 +57,12 @@ void Renderer::close_window(void)
 	if (z_buffer)
 		free(z_buffer);
 
-	if (back_buffer_dc) {
-		if (back_buffer_original_handle) {
-			SelectObject(back_buffer_dc, back_buffer_original_handle);
-			DeleteObject(back_buffer_handle);
-		}
-		DeleteDC(back_buffer_dc);
-	}
-
-	if (window_handle)
-		CloseWindow(window_handle);
-
-	if (window_class.lpfnWndProc)
-		UnregisterClass((LPCSTR)window_class_atom, 0);
+	scg_close_window();
 }
 
 void Renderer::refresh(void)
 {
-	HDC main_dc = GetDC(window_handle);
-	BitBlt(main_dc, 0, 0, window_width, window_height, back_buffer_dc, 0, 0, SRCCOPY);
-	ReleaseDC(window_handle, main_dc);
+	scg_refresh();
 }
 
 void Renderer::clear(void)
@@ -216,21 +137,32 @@ void Renderer::draw_line(Vertex a, Vertex b)
 	// z buffer is not needed when drawing line
 	float a_b_x = a.position.x - b.position.x;
 	float a_b_y = a.position.y - b.position.y;
+	float a_b_z = a.position.z - b.position.z;
 	if (fabsf(a_b_x) < fabsf(a_b_y)) {
 		int top = (int)clampf(fminf(a.position.y, b.position.y), 0, (float)window_height);
 		int bottom = (int)clampf(fmaxf(a.position.y, b.position.y), 0, (float)window_height);
 		for (int y = top; y < bottom; ++y) {
+			float depth = 1 / (a.position.z - a_b_z * (a.position.y - y) / a_b_y);
 			int x = (int)((b.position.x * (a.position.y - (float)y) + a.position.x * ((float)y - b.position.y)) / a_b_y);
-			if (x >= 0 && x < window_width)
-				back_buffer[x + y * window_width] = 0x00ffffff;
+			if (x >= 0 && x < window_width) {
+				if (depth >= z_buffer[x + y * window_width]) {
+					z_buffer[x + y * window_width] = depth;
+					back_buffer[x + y * window_width] = 0x00ffffff;
+				}
+			}
 		}
 	} else {
 		int left = (int)clampf(fminf(a.position.x, b.position.x), 0, (float)window_width);
 		int right = (int)clampf(fmaxf(a.position.x, b.position.x), 0, (float)window_width);
 		for (int x = left; x < right; ++x) {
+			float depth = 1 / (a.position.z + a_b_z * (a.position.x - x) / a_b_x);
 			int y = (int)((b.position.y * (a.position.x - (float)x) + a.position.y * ((float)x - b.position.x)) / a_b_x);
-			if (y >= 0 && y < window_height)
-				back_buffer[x + y * window_width] = 0x00ffffff;
+			if (y >= 0 && y < window_height) {
+				if (depth >= z_buffer[x + y * window_width]) {
+					z_buffer[x + y * window_width] = depth;
+					back_buffer[x + y * window_width] = 0x00ffffff;
+				}
+			}
 		}
 	}
 }
@@ -262,7 +194,7 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 	float c_a_y = (c.position.y - a.position.y);
 	float a_b_y = (a.position.y - b.position.y);
 	float tmp =
-		+ b_c_y * a.position.x
+		+b_c_y * a.position.x
 		+ c_a_y * b.position.x
 		+ a_b_y * c.position.x;
 
@@ -300,15 +232,15 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 			float x_f = (float)x;
 			float y_f = (float)y;
 			float side0 =
-				+ b_c_y * x_f
+				+b_c_y * x_f
 				+ (c.position.y - y_f) * b.position.x
 				+ (y_f - b.position.y) * c.position.x;
 			float side1 =
-				+ (y_f - c.position.y) * a.position.x
+				+(y_f - c.position.y) * a.position.x
 				+ c_a_y * x_f
 				+ (a.position.y - y_f) * c.position.x;
 			float side2 =
-				+ (b.position.y - y_f) * a.position.x
+				+(b.position.y - y_f) * a.position.x
 				+ (y_f - a.position.y) * b.position.x
 				+ a_b_y * x_f;
 			// the point is same side with another triangle point in each in 3 side
@@ -321,7 +253,7 @@ void Renderer::draw_triangle(Vertex a, Vertex b, Vertex c)
 				float pixel_depth = 1 / (a.position.z + u * b_a_z + v * c_a_z);
 				if (pixel_depth > z_buffer[x + y * window_width]) {
 					z_buffer[x + y * window_width] = pixel_depth;
-					unsigned pixel_color = a.position.y + u * b_a_color + v * c_a_color;
+					unsigned pixel_color = (unsigned)(a.position.y + u * b_a_color + v * c_a_color);
 					back_buffer[x + y * window_width] = pixel_color << 8;
 				}
 			}
