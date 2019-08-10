@@ -113,3 +113,13 @@ void scg_refresh(void)
 	BitBlt(main_dc, 0, 0, scg_window_width, scg_window_height, back_buffer_dc, 0, 0, SRCCOPY);
 	ReleaseDC(window_handle, main_dc);
 }
+
+void scg_msg_dispatch(void)
+{
+	MSG msg;
+	while (PeekMessage(&msg, 0, 0, 0, PM_NOREMOVE)) {
+		GetMessage(&msg, 0, 0, 0);
+		DispatchMessage(&msg);
+	}
+}
+

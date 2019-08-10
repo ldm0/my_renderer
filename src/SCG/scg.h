@@ -11,6 +11,7 @@ extern "C" {
 
 // top-down color bits
 extern unsigned *scg_back_buffer;
+// actually client draw area width and height
 extern int scg_window_width;
 extern int scg_window_height;
 
@@ -23,6 +24,11 @@ extern void scg_close_window(void);
 
 // put draw things to foreground
 extern void scg_refresh(void);
+
+// optional
+// dispatch message to message queue
+// you can dispatch message with other functions or use this for convenience
+extern void scg_msg_dispatch(void);
 
 #ifdef __cplusplus
 }
