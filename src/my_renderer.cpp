@@ -78,7 +78,7 @@ void Renderer::clear(void)
 #undef block_size
 }
 
-void Renderer::load_mesh(my_obj_elements *_mesh)
+void Renderer::load_mesh(const my_obj_elements *_mesh)
 {
 	mesh = _mesh;
 }

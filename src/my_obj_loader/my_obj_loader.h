@@ -24,7 +24,7 @@ typedef struct my_obj_vn {
 	float x, y, z;
 } my_obj_vn;
 
-// parameter space vertices (sounds good but I don't know how it's used. :-P)
+// parameter space vertices (sounds good but I don't know how it's used. :P)
 typedef struct my_obj_vp {
 	float u, v, w;
 } my_obj_vp;
@@ -65,7 +65,7 @@ int my_obj_get_mesh(
 	const char *file_name,
 	my_obj_elements *elements);
 
-void my_obj_release_elements( 
+void my_obj_free_mesh( 
 	my_obj_elements *elements);
 
 #ifdef __cplusplus

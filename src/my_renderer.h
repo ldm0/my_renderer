@@ -32,7 +32,7 @@ private:
 #pragma endregion
 
 #pragma region mesh
-	my_obj_elements *mesh;
+	const my_obj_elements *mesh;
 #pragma endregion
 
 #pragma region texture
@@ -65,7 +65,7 @@ public:
 	void close_window(void);
 
 	// load mesh want show in screen
-	void load_mesh(my_obj_elements *mesh);
+	void load_mesh(const my_obj_elements *mesh);
 
 	// load texture(only one texture in current renderer)
 	void load_texture(unsigned width, unsigned height, const unsigned *texture);
