@@ -2,6 +2,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 
 #define MAX_LINE_LENGTH					233
 #define DEFAULT_V_BUFFER_LENGTH			64
@@ -47,6 +48,30 @@ static inline int remove_unuse(int *ptr, const char *obj_buffer, const int obj_b
     return 0;
 }
 
+/** Copy a line from source to destination
+ *  \param dest Destination
+ *  \param src Source
+ *  \param max_length Length of destination. 
+ *                    If line exceeds, at most copy max_length - 1
+ *  \return -1 Only when line exceeds 
+ */
+static inline int line_cpy(char *dest, const char *src, int max_length)
+{
+    for (int i = 0; i < max_length - 1; ++i) {
+        if (src[i] == '\n' || src[i] == '\0') {
+            dest[i] = '\0';
+            return 0;
+        } else {
+            dest[i] = src[i];
+        }
+    }
+    dest[max_length - 1] = '\0';
+    if (src[max_length - 1] == '\n' || src[max_length - 1] == '\0')
+        return 0;
+    else
+        return -1;
+}
+
 /** Move pointer to first character of next line
  *  \param string parse pointer of obj buffer
  *  \param obj_buffer buffer being parsed
@@ -80,10 +105,14 @@ static int my_obj_get_v(
         return -1;
 
     my_obj_v tmp_v;
+    char a_line[MAX_LINE_LENGTH];
     for (;;) {
         if (remove_unuse(ptr, obj_buffer, obj_buffer_length) == -1)
             break;
-        if (sscanf(obj_buffer + *ptr, "v %f %f %f", &tmp_v.x, &tmp_v.y, &tmp_v.z) != 3)
+        // Use this to avoid sscanf's slowness.
+        // Using sscanf on large array leads to slowness because sscanf calls strlen to get string size
+        line_cpy(a_line, obj_buffer + *ptr, MAX_LINE_LENGTH);
+        if (sscanf(a_line, "v %f %f %f", &tmp_v.x, &tmp_v.y, &tmp_v.z) != 3)
             break;
         if (tmp_v_buffer_top >= tmp_v_buffer_capacity) {
             tmp_v_buffer_capacity += tmp_v_buffer_capacity >> 1;		// capacity multiply 1.5, for memory reuse
@@ -121,10 +150,12 @@ static int my_obj_get_vt(
         return -1;
 
     my_obj_vt tmp_vt;
+    char a_line[MAX_LINE_LENGTH];
     for (;;) {
         if (remove_unuse(ptr, obj_buffer, obj_buffer_length) == -1)
             break;
-        if (sscanf(obj_buffer + *ptr, "vt %f %f", &tmp_vt.u, &tmp_vt.v) != 2)
+        line_cpy(a_line, obj_buffer + *ptr, MAX_LINE_LENGTH);
+        if (sscanf(a_line, "vt %f %f", &tmp_vt.u, &tmp_vt.v) != 2)
             break;
         if (tmp_vt_buffer_top >= tmp_vt_buffer_capacity) {
             tmp_vt_buffer_capacity += tmp_vt_buffer_capacity >> 1;		// capacity multiply 1.5, for memory reuse
@@ -161,10 +192,12 @@ static int my_obj_get_vn(
         return -1;
 
     my_obj_vn tmp_vn;
+    char a_line[MAX_LINE_LENGTH];
     for (;;) {
         if (remove_unuse(ptr, obj_buffer, obj_buffer_length) == -1)
             break;
-        if (sscanf(obj_buffer + *ptr, "vn %f %f %f", &tmp_vn.x, &tmp_vn.y, &tmp_vn.z) != 3)
+        line_cpy(a_line, obj_buffer + *ptr, MAX_LINE_LENGTH);
+        if (sscanf(a_line, "vn %f %f %f", &tmp_vn.x, &tmp_vn.y, &tmp_vn.z) != 3)
             break;
         if (tmp_vn_buffer_top >= tmp_vn_buffer_capacity) {
             tmp_vn_buffer_capacity += tmp_vn_buffer_capacity >> 1;		// capacity multiply 1.5, for memory reuse
@@ -201,10 +234,12 @@ static int my_obj_get_vp(
         return -1;
 
     my_obj_vp tmp_vp = {0};
+    char a_line[MAX_LINE_LENGTH];
     for (;;) {
         if (remove_unuse(ptr, obj_buffer, obj_buffer_length) == -1)
             break;
-        if (sscanf(obj_buffer + *ptr, "vp %f %f %f", &tmp_vp.u, &tmp_vp.v, &tmp_vp.w) != 3)
+        line_cpy(a_line, obj_buffer + *ptr, MAX_LINE_LENGTH);
+        if (sscanf(a_line, "vp %f %f %f", &tmp_vp.u, &tmp_vp.v, &tmp_vp.w) != 3)
             break;
         if (tmp_vp_buffer_top >= tmp_vp_buffer_capacity) {
             tmp_vp_buffer_capacity += tmp_vp_buffer_capacity >> 1;		// capacity multiply 1.5, for memory reuse
@@ -398,24 +433,27 @@ static int my_obj_get_l(
         return -1;
 
     my_obj_l tmp_l;
+    char a_line[MAX_LINE_LENGTH];
     for (;;) {
         tmp_l.size = 0;
         unsigned tmp_val;
         if (remove_unuse(ptr, obj_buffer, obj_buffer_length) == -1)
             break;
         // because at least there is a unsigned after l
+        line_cpy(a_line, obj_buffer + *ptr, MAX_LINE_LENGTH);
         int offset = 0;
-        if (sscanf(obj_buffer + *ptr, "l %u%n", &tmp_val, &offset) != 1)
+        int offset_add = 0;
+        if (sscanf(a_line, "l %u%n", &tmp_val, &offset_add) != 1)
             break;
-        *ptr += offset;
+        offset += offset_add;
         unsigned tmp_l_index_capacity = DEFAULT_L_INDEX_BUFFER_LENGTH;
         tmp_l.v = (unsigned *)my_obj_malloc(tmp_l_index_capacity * sizeof(unsigned));
         if (!tmp_l.v)
             return -1;
         for (;;) {
-            if (sscanf(obj_buffer + *ptr, "%u%n", &tmp_val, &offset) != 1)
+            if (sscanf(a_line + offset, "%u%n", &tmp_val, &offset_add) != 1)
                 break;
-            *ptr += offset;
+            offset += offset_add;
 
             tmp_l.v[tmp_l.size++] = tmp_val;
             if (tmp_l.size >= tmp_l_index_capacity) {
