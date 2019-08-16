@@ -1,5 +1,5 @@
 #include"my_renderer.h"
-#include"my_simple_model/my_simple_model_loader.h"
+#include"my_obj_loader/my_obj_loader.h"
 #include<Windows.h>
 #include<time.h>
 #include<math.h>
@@ -145,7 +145,7 @@ int main()
 	// load mesh from file
 	my_obj_elements mesh;
 	my_obj_set_allocator(malloc, free);
-	my_obj_get_mesh("./bunny.obj", &mesh);
+	my_obj_get_mesh("./assets/bunny.obj", &mesh);
 
 	camera_reset();
 	// load mesh to renderer

@@ -16,7 +16,7 @@
 static void* (*my_obj_malloc)(size_t size) = malloc;
 static void (*my_obj_free)(void* memory) = free;
 
-/** remove unused characters(comment empty lines etc.)
+/** Remove unused characters(comment empty lines etc.)
  *  \param string parse pointer of obj buffer
  *  \param obj_buffer buffer being parsed
  *  \param obj_buffer_length length of obj_buffer
@@ -329,10 +329,10 @@ static inline int read_f_elements(
             ws_remove(ptr, obj_buffer);
             if (get_unsigned_number(&(tmp_f->vn3), ptr, obj_buffer, obj_buffer_length) != 0)
                 return -1;
-        } else /*if (obj_buffer[*ptr] == 0)*/ {
+        } else {
             return -1;
         }
-    } else /*if (obj_buffer[*ptr] == 0)*/ {
+    } else {
         return -1;
     }
     return 0;
