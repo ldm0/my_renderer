@@ -9,7 +9,7 @@
 
 /* GPU Based Software Renderer */
 
-// Remember don't use draw before clear, because result will be overwrite
+// Remember don't use draw before clear, because result will be overwrote
 class Renderer {
 public:
     enum DRAW_MODE {
@@ -29,8 +29,8 @@ public:
 private:
 #pragma region allocators
     // Memory allocation may occur during clipping 
-    void *(*renderer_malloc)(size_t);
-    void *(*renderer_free)(size_t);
+    void*(*malloc)(size_t);
+    void (*free)(void *);
 #pragma endregion
 
 #pragma region buffers
@@ -46,23 +46,27 @@ private:
 #pragma region texture
     unsigned texture_width;
     unsigned texture_height;
-    // 0x00RRGGBB, b is at the higher end
+    // 0x00RRGGBB, B is the big end
     const unsigned* texture;
 #pragma endregion
 
     Renderer();
 
-    
+    void v_shading(void);
+    void projection(void);
+    void clipping(void);
+    void screen_mapping(void);
+    void rasterization(void);
 
-    // three vertices should be transformed properly
-    void draw_triangle(my_obj_f face);
+    //// three vertices should be transformed properly
+    //void draw_triangle(my_obj_f face);
 
-    void draw_triangle_edge(my_obj_v a, my_obj_v b, my_obj_v c);
+    //void draw_triangle_edge(my_obj_v a, my_obj_v b, my_obj_v c);
 
-    void draw_line(my_obj_v a, my_obj_v b);
+    //void draw_line(my_obj_v a, my_obj_v b);
 
 public:
-    bool window_exit;
+    //bool window_exit;
 
     ~Renderer();
 

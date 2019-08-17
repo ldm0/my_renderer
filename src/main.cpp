@@ -1,6 +1,7 @@
 #include"my_renderer.h"
 #include"my_obj_loader/my_obj_loader.h"
 #include<Windows.h>
+#include<tchar.h>
 #include<time.h>
 #include<math.h>
 #include<stdio.h>	// for print debug info
@@ -16,6 +17,8 @@ WORD mouse_drag_position_x = 0;
 WORD mouse_drag_position_y = 0;
 WORD mouse_position_x = 0;
 WORD mouse_position_y = 0;
+
+const char *mesh_file_path = "./assets/bunny.obj";
 
 LRESULT CALLBACK event_process(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -139,17 +142,22 @@ void camera_control(void)
 
 int main()
 {
-	if (renderer.create_window(800, 600, _T("That's good~"), event_process) == -1)
-		return -1;
-
-	// load mesh from file
-	my_obj_elements mesh;
 	my_obj_set_allocator(malloc, free);
-	my_obj_get_mesh("./assets/bunny.obj", &mesh);
+	renderer.set_allocator(malloc, free);
 
-	camera_reset();
-	// load mesh to renderer
+	if (renderer.create_window(800, 600, _T("That's good~"), event_process) == -1) {
+        printf("Create window failed!\n");
+		return -1;
+    }
+
+	my_obj_elements mesh;
+	if (my_obj_get_mesh(mesh_file_path, &mesh) == -1) {
+        printf("Load mesh from %s failed!\n", mesh_file_path);
+        return -1;
+    }
+
 	renderer.load_mesh(&mesh);
+	camera_reset();
 	while (!window_exit) {
 		event_dispatch();
 		camera_control();
@@ -158,7 +166,8 @@ int main()
 		renderer.refresh();
 	}
 
-	my_obj_release_elements(&mesh);
+	my_obj_free_mesh(&mesh);
+    renderer.close_window();
 
 	return 0;
 }
