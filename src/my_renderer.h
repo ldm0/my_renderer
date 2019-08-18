@@ -22,8 +22,8 @@ public:
     // Initial direction is (0, 0, 1)
     // Assume left hand coordinates
     // Yaw: y, Pitch: x, Roll: z
-    vec3 yaw_pitch_roll;
-    vec4 camera_position;
+    f3 yaw_pitch_roll;
+    f4 camera_position;
 #pragma endregion
 
 private:
@@ -34,8 +34,15 @@ private:
 #pragma endregion
 
 #pragma region buffers
+    // Color back buffer
     unsigned *back_buffer;
+    // Each pixel in window occupies a z value
     float *z_buffer;
+    // Buffer for vertices to be projected and screen mapping
+    f3 *v_buffer;
+    // Color of three vertices in each face
+    // 0x00RRGGBB, B is the big end
+    u3 *c_buffer;
 #pragma endregion
 
 #pragma region mesh
@@ -82,8 +89,8 @@ public:
     // Close window
     void close_window(void);
 
-    // Load mesh to show
-    void load_mesh(const my_obj_elements *mesh);
+    // Load mesh to show and malloc enough buffer for projection and vertex shading(light)
+    int load_mesh(const my_obj_elements *mesh);
 
     // Load texture(shallow copy and only one texture is allowed in current renderer)
     void load_texture(unsigned width, unsigned height, const unsigned *texture);
@@ -91,10 +98,10 @@ public:
     // Fill back_buffer with black and gray blocks
     void clear(void);
 
-    // put Rasterize things to back buffer
+    // Draw images to back_buffer
     void draw(void);
 
-    // Copy back buffer to front
+    // Swap buffers
     void refresh(void);
 };
 

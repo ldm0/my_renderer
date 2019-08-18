@@ -274,9 +274,10 @@ static inline void ws_remove(long *ptr, const char *str)
         ++*ptr;
 }
 
-// return -1 only when str is parsed to the end
+// return -1 only when str is parsed to the end at first 
 /** Attention:
- *  1. When number is not valid, this function doesn't return error.
+ *  1. When number cannot get a number, this function
+       doesn't return error, and the result is not changed
  *  2. This function should be used after trailing spaces are removed.
  */
 static inline int get_unsigned_number(
@@ -285,14 +286,14 @@ static inline int get_unsigned_number(
     const char *str,
     const int length)
 {
+    if (*ptr >= length)
+        return -1;
     if (isdigit(str[*ptr])) {
         unsigned number = 0;
         do {
             number = number * 10 + (str[*ptr] - '0');
-            ++(*ptr);
-            if (*ptr >= length)
-                return -1;
-        } while (isdigit(str[*ptr]));
+            ++*ptr;
+        } while (isdigit(str[*ptr]) && (*ptr < length));
         *result = number;
     }
     return 0;
@@ -317,8 +318,8 @@ static inline int read_f_elements(
     } else if (obj_buffer[*ptr] == '/') {
         ++*ptr;
         ws_remove(ptr, obj_buffer);
-        // don't return -1 when failed because no digit between two '/' is allowed
-        get_unsigned_number(&(tmp_f->vt1), ptr, obj_buffer, obj_buffer_length);
+        if (get_unsigned_number(&(tmp_f->vt1), ptr, obj_buffer, obj_buffer_length) != 0)
+            return -1;
         if (obj_buffer[*ptr] == ' ') {
             ws_remove(ptr, obj_buffer);
             if (get_unsigned_number(&(tmp_f->v2), ptr, obj_buffer, obj_buffer_length) != 0)
@@ -505,7 +506,7 @@ int my_obj_get_mesh(
     FILE *obj_fs = NULL;
     char *obj_buffer = NULL;
 
-    obj_fs = fopen(file_name, "r");
+    obj_fs = fopen(file_name, "rb");
     if (obj_fs == NULL)
         goto error;
     if (fseek(obj_fs, 0, SEEK_END) == -1)
@@ -515,7 +516,8 @@ int my_obj_get_mesh(
     if (obj_buffer == NULL)
         goto error;
     rewind(obj_fs);
-    if (fread(obj_buffer, 1, obj_buffer_length, obj_fs) != obj_buffer_length * sizeof(char))
+    long i = 0;
+    if ((i = fread(obj_buffer, 1, obj_buffer_length, obj_fs)) != obj_buffer_length * sizeof(char))
         goto error;
     fclose(obj_fs);
     obj_fs = NULL;

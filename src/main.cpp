@@ -12,13 +12,13 @@
 bool key_down[256] = {false};
 bool window_exit = false;
 bool mouse_drag = false;
-vec3 yaw_pitch_roll_before = {0};
+f3 yaw_pitch_roll_before = {0};
 WORD mouse_drag_position_x = 0;
 WORD mouse_drag_position_y = 0;
 WORD mouse_position_x = 0;
 WORD mouse_position_y = 0;
 
-const char *mesh_file_path = "./assets/bunny.obj";
+const char *mesh_file_path = "./assets/cube.obj";
 
 LRESULT CALLBACK event_process(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -68,10 +68,10 @@ void camera_control(void)
 {
 #define move_speed (0.003f)
 #define rotate_speed (0.01f)
-	vec4 camera_direction = {0.f, 0.f, 1.f, 0.f};
+	f4 camera_direction = {0.f, 0.f, 1.f, 0.f};
 	camera_direction = rotate(&camera_direction, &(renderer.yaw_pitch_roll));
-	vec4 up_direction = {0.f, 1.f, 0.f, 0.f};
-	vec4 right_direction = cross_product(&camera_direction, &up_direction);
+	f4 up_direction = {0.f, 1.f, 0.f, 0.f};
+	f4 right_direction = cross_product(&camera_direction, &up_direction);
 	right_direction.x *= -1.f;
 	right_direction.y *= -1.f;
 	right_direction.z *= -1.f;

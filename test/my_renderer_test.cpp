@@ -7,10 +7,36 @@
 #define GET_ASSET(name) "../../../assets/"#name
 #endif
 
-TEST(my_obj_loader, basic)
+TEST(my_obj_loader, triangle)
+{
+    my_obj_elements mesh;
+    int result = my_obj_get_mesh(GET_ASSET(triangle.obj), &mesh);
+    EXPECT_EQ(result, 0);
+    EXPECT_EQ(mesh.num_v, 3);
+    EXPECT_EQ(mesh.num_vn, 0);
+    EXPECT_EQ(mesh.num_f, 1);
+    EXPECT_EQ(mesh.f_buffer[0].v1, 1);
+    EXPECT_EQ(mesh.f_buffer[0].v2, 2);
+    EXPECT_EQ(mesh.f_buffer[0].v3, 3);
+    my_obj_free_mesh(&mesh);
+}
+
+TEST(my_obj_loader, cube)
+{
+    my_obj_elements mesh;
+    int result = my_obj_get_mesh(GET_ASSET(cube.obj), &mesh);
+    EXPECT_EQ(result, 0);
+    EXPECT_EQ(mesh.num_v, 8);
+    EXPECT_EQ(mesh.num_vn, 6);
+    EXPECT_EQ(mesh.num_f, 12);
+    my_obj_free_mesh(&mesh);
+}
+
+TEST(my_obj_loader, bunny)
 {
     my_obj_elements elements;
-    ASSERT_EQ(my_obj_get_mesh(GET_ASSET(bunny.obj), &elements), 0);
+    int result = my_obj_get_mesh(GET_ASSET(bunny.obj), &elements);
+    ASSERT_EQ(result, 0);
     EXPECT_EQ(34820 - 3, elements.num_v);
     EXPECT_FLOAT_EQ(elements.v_buffer[0].x, (float)0.1102022);
     EXPECT_FLOAT_EQ(elements.v_buffer[0].y, (float)0.74011);
@@ -59,8 +85,9 @@ TEST(my_obj_loader, basic)
     my_obj_free_mesh(&elements);
 }
 
-/*
-TEST(my_obj_loader, advanced)
+int main(int argc, char **argv)
 {
+    ::testing::InitGoogleTest(&argc, argv);
+    my_obj_set_allocator(malloc, free);
+    return RUN_ALL_TESTS();
 }
-*/
