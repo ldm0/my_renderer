@@ -37,9 +37,10 @@ void Renderer::v_shading(void)
 {
     unsigned numf = mesh->num_f;
     for (unsigned i = 0; i < numf; ++i) {
-        v_buffer[i].x = 0x007f7fff;
-        v_buffer[i].y = 0x007f7fff;
-        v_buffer[i].z = 0x007f7fff;
+        //float brightness = 0.1;
+        c_buffer[i].x = 0x007f7fff;
+        c_buffer[i].y = 0x007f7fff;
+        c_buffer[i].z = 0x007f7fff;
     }
 }
 
@@ -78,7 +79,7 @@ void Renderer::screen_mapping(void)
 
 void Renderer::rasterization(void)
 {
-    // currently only wireframe 
+    // currently only wire frame 
     unsigned numf = mesh->num_f;
     for (unsigned i = 0; i < numf; ++i) {
         u3 triangle = {
@@ -113,8 +114,9 @@ void Renderer::rasterization(void)
 
         // currently just use position_y as color for testing
         // so I don't use c_a_y used before
-        float b_a_color = b.y - a.y;
-        float c_a_color = c.y - a.y;
+        float a_color = c_buffer[i].x;
+        float b_a_color = c_buffer[i].y - c_buffer[i].x;
+        float c_a_color = c_buffer[i].z - c_buffer[i].x;
 
         float b_a_z = b.z - a.z;
         float c_a_z = c.z - a.z;
@@ -166,7 +168,7 @@ void Renderer::rasterization(void)
                     float pixel_depth = 1 / (a.z + u * b_a_z + v * c_a_z);
                     if (pixel_depth > z_buffer[x + y * scg_window_width]) {
                         z_buffer[x + y * scg_window_width] = pixel_depth;
-                        unsigned pixel_color = (unsigned)(a.y + u * b_a_color + v * c_a_color);
+                        unsigned pixel_color = (unsigned)(a_color + u * b_a_color + v * c_a_color);
                         back_buffer[x + y * scg_window_width] = pixel_color << 8;
                     }
                 }

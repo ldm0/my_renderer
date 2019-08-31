@@ -18,7 +18,7 @@ WORD mouse_drag_position_y = 0;
 WORD mouse_position_x = 0;
 WORD mouse_position_y = 0;
 
-const char *mesh_file_path = "./assets/cube.obj";
+const char *mesh_file_path = "./assets/monkey.obj";
 
 LRESULT CALLBACK event_process(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -41,6 +41,7 @@ LRESULT CALLBACK event_process(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	case WM_MOUSEMOVE:
 		mouse_position_x = LOWORD(lparam);
 		mouse_position_y = HIWORD(lparam);
+        break;
 	default:
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
@@ -66,7 +67,7 @@ void camera_reset(void)
 
 void camera_control(void)
 {
-#define move_speed (0.003f)
+#define move_speed (0.03f)
 #define rotate_speed (0.01f)
 	f4 camera_direction = {0.f, 0.f, 1.f, 0.f};
 	camera_direction = rotate(&camera_direction, &(renderer.yaw_pitch_roll));

@@ -516,8 +516,7 @@ int my_obj_get_mesh(
     if (obj_buffer == NULL)
         goto error;
     rewind(obj_fs);
-    long i = 0;
-    if ((i = fread(obj_buffer, 1, obj_buffer_length, obj_fs)) != obj_buffer_length * sizeof(char))
+    if (fread(obj_buffer, 1, obj_buffer_length, obj_fs) != obj_buffer_length * sizeof(char))
         goto error;
     fclose(obj_fs);
     obj_fs = NULL;
