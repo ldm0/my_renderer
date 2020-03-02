@@ -18,9 +18,9 @@ inline int ceiling(float f)
     return (int)(f + .999999);
 }
 
-inline float clampf(float x, float minVal, float maxVal)
+inline float clampf(float x, float min_val, float max_val)
 {
-    return fminf(maxVal, fmaxf(minVal, x));
+    return fminf(max_val, fmaxf(min_val, x));
 }
 
 inline void negative(mat4x4 * matrix)

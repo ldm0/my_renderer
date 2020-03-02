@@ -61,7 +61,7 @@ void event_dispatch(void)
 
 void camera_reset(void)
 {
-	renderer.camera_position = {0.f, 0.f, -.5f, 1.f};
+	renderer.camera_position = {0.f, 0.f, -4.f, 1.f};
 	renderer.yaw_pitch_roll = {0.f, 0.f, 0.f};
 }
 
@@ -113,6 +113,8 @@ void camera_control(void)
 		renderer.camera_position = translate(&(renderer.camera_position), &right_direction, move_speed);
 	if (key_down['A'])
 		renderer.camera_position = translate(&(renderer.camera_position), &right_direction, -move_speed);
+	// for debug
+	// printf("Position: %f %f %f\n", renderer.camera_position.x, renderer.camera_position.y, renderer.camera_position.z);
 	if (key_down['R'])
 		camera_reset();
 	static bool mode_change = false;
@@ -148,13 +150,13 @@ int main()
 
 	if (renderer.create_window(800, 600, _T("That's good~"), event_process) == -1) {
         printf("Create window failed!\n");
-		return -1;
+		goto error;
     }
 
 	my_obj_elements mesh;
 	if (my_obj_get_mesh(mesh_file_path, &mesh) == -1) {
         printf("Load mesh from %s failed!\n", mesh_file_path);
-        return -1;
+		goto error;
     }
 
 	renderer.load_mesh(&mesh);
@@ -171,4 +173,6 @@ int main()
     renderer.close_window();
 
 	return 0;
+error:
+	return -1;
 }

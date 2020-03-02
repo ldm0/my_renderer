@@ -1,7 +1,6 @@
 #include"my_obj_loader.h"
 
 #include<stdio.h>
-#include<stdlib.h>
 #include<string.h>
 
 #define MAX_LINE_LENGTH					233
@@ -14,8 +13,8 @@
 #define DEFAULT_L_INDEX_BUFFER_LENGTH	8
 
 // For customizable client memory management
-static void* (*my_obj_malloc)(size_t size) = malloc;
-static void (*my_obj_free)(void* memory) = free;
+static void* (*my_obj_malloc)(size_t size);
+static void (*my_obj_free)(void* memory);
 
 /** Remove unused characters(comment empty lines etc.)
  *  \param string parse pointer of obj buffer
@@ -534,7 +533,7 @@ int my_obj_get_mesh(
         goto error;
     if (my_obj_get_l(&parse_ptr, obj_buffer, obj_buffer_length, &(elements->num_l), &(elements->l_buffer)) != 0)
         goto error;
-    free(obj_buffer);
+    my_obj_free(obj_buffer);
     return 0;
 error:
     if (obj_fs)

@@ -18,22 +18,17 @@ public:
         DRAW_MESH_COLOR,
     } draw_mode;
 
-#pragma region camera
     // Initial direction is (0, 0, 1)
     // Assume left hand coordinates
     // Yaw: y, Pitch: x, Roll: z
     f3 yaw_pitch_roll;
     f4 camera_position;
-#pragma endregion
 
 private:
-#pragma region allocators
     // Memory allocation may occur during clipping 
-    void*(*malloc)(size_t);
-    void (*free)(void *);
-#pragma endregion
+    void*(*alloc)(size_t);
+    void (*drop)(void *);
 
-#pragma region buffers
     // Color back buffer
     unsigned *back_buffer;
     // Each pixel in window occupies a z value
@@ -43,19 +38,16 @@ private:
     // Color of three vertices in each face
     // 0x00RRGGBB, B is the big end
     u3 *c_buffer;
-#pragma endregion
 
-#pragma region mesh
     // Currently only vertex vertex_normal and faces were used
     const my_obj_elements *mesh;
-#pragma endregion
 
-#pragma region texture
+    /*
     unsigned texture_width;
     unsigned texture_height;
     // 0x00RRGGBB, B is the big end
     const unsigned* texture;
-#pragma endregion
+    */
 
     Renderer();
 
@@ -64,13 +56,7 @@ private:
     void clipping(void);
     void screen_mapping(void);
     void rasterization(void);
-
-    //// three vertices should be transformed properly
-    //void draw_triangle(my_obj_f face);
-
-    //void draw_triangle_edge(my_obj_v a, my_obj_v b, my_obj_v c);
-
-    //void draw_line(my_obj_v a, my_obj_v b);
+    void draw_line(f3 a, f3 b);
 
 public:
     //bool window_exit;
@@ -81,7 +67,7 @@ public:
     static Renderer& get(void);
 
     // Set allocator for heap memory allocation during rendering
-    void set_allocator(void *(*malloc)(size_t), void (*free)(void *));
+    void set_allocator(void *(*alloc)(size_t), void (*drop)(void *));
 
     // Create graphic window, with back_buffer and z_buffer
     int create_window(int width, int height, const TCHAR* title, WNDPROC event_process);
@@ -93,7 +79,7 @@ public:
     int load_mesh(const my_obj_elements *mesh);
 
     // Load texture(shallow copy and only one texture is allowed in current renderer)
-    void load_texture(unsigned width, unsigned height, const unsigned *texture);
+    //void load_texture(unsigned width, unsigned height, const unsigned *texture);
 
     // Fill back_buffer with black and gray blocks
     void clear(void);
