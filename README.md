@@ -1,26 +1,15 @@
-# My simple soft renderer
+# My Simple Software Renderer
 
 ![Bunny](./pics/bunny.png)
 
-A simple soft renderer build from scratch.
+This is a simple software renderer build from scratch(real scratch).
 
-You can drag to rotate and use wasd to move.
+1. Drag window for camera rotating.
 
-During creation of this soft renderer, I created a kind of model format called "simple" for convenience. 
+2. Using `W``A``S``D` to move.
 
-Like the name, the modle format is also really simple, which consists of these parts: 
+3. Press `M` to change the render mode between Mesh Mode, Color mode, Mesh and Color Mode.
 
+4. Press `R` to reset camera position and direction.
 
-| Meaning                          | format     |
-| -------------------------------- | ---------- |
-| num_vertices num_faces(triangle) | %d %d\n    |
-| vertex[0]                        | %f %f %f\n |
-| vertex[1]                        | %f %f %f\n |
-| ...                              | ...        |
-| vertex[num_vertices - 1]         | %f %f %f\n |
-| face[0]                          | %d %d %d\n |
-| face[1]                          | %d %d %d\n |
-| ...                              | ...        |
-| face[num_faces - 1]              | %d %d %d\n |
-
-First use ply2simple.c convert official staford bunny model(in ply format) to simple format, then use my custom soft renderer to load and render it, finally the picture is created.
+5. Press `Q` `E` to tilt camera

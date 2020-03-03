@@ -18,7 +18,7 @@ WORD mouse_drag_position_y = 0;
 WORD mouse_position_x = 0;
 WORD mouse_position_y = 0;
 
-const char *mesh_file_path = "./assets/monkey.obj";
+const char *mesh_file_path = "./assets/bunny.obj";
 
 LRESULT CALLBACK event_process(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
